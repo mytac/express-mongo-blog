@@ -1,7 +1,7 @@
 const express=require('express')
 const router=express.Router()
 
-app.get('/users/:name',(req,res)=>{
+router.get('/:name',(req,res)=>{
     res.send(`hello~${req.params.name}`)
 })
 
