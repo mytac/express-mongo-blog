@@ -15,5 +15,6 @@ module.exports = {
       return res.redirect('back'); // 返回之前的页面
     }
     next();
+    return false;
   },
 };
