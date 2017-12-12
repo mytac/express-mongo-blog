@@ -8,7 +8,18 @@ const routes = require('./routes');
 const pkg = require('./package');
 
 const app = express();
-
+// 设置模板全局常量
+app.locals.blog = {
+  title: pkg.name, // 站名
+  description: pkg.description, // 站描述
+};
+// 添加模板必备的三个变量
+app.use((req, res, next) => {
+  res.locals.user = req.session.user;
+  res.locals.success = req('flash').success.toString();
+  res.locals.error = req('flash').error.toString();
+  next();
+});
 // 设置模板目录
 app.set('views', path.join(__dirname, 'views'));
 // 设置模板引擎为ejs
