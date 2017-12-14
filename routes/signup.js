@@ -43,7 +43,7 @@ router.post('/', checkNotLogin, (req, res, next) => {
     }
   } catch (e) {
     fs.unlink(req.files.avatar.path);
-    req.flash(e.message);
+    req.flash('error', e.message);
     return res.redirect('/signup');
   }
 
@@ -57,13 +57,13 @@ router.post('/', checkNotLogin, (req, res, next) => {
       // 删除密码，写入session
       delete user.password;
       req.session.user = user;
-      req.flash('注册成功');
+      req.flash('success', '注册成功');
       res.redirect('/posts');
     })
     .catch((e) => {
       fs.unlink(req.files.avatar.path);
       if (e.message.match('duplicate key')) {
-        req.flash('用户名已被占用');
+        req.flash('error', '用户名已被占用');
         return res.redirect('/signup');
       }
       next(e);
