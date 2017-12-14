@@ -63,7 +63,6 @@ router.get('/:postId', (req, res, next) => {
       if (!post) {
         throw new Error('该文章不存在');
       }
-
       res.render('post', { post });
     })
     .catch(next);
@@ -71,17 +70,70 @@ router.get('/:postId', (req, res, next) => {
 
 // GET /posts/:postId/edit 文章编辑页
 router.get('/:postId/edit', (req, res, next) => {
-  res.send('文章编辑页');
+  const { postId } = req.params;
+
+  const authorId = req.session.user._id;
+  PostModel.getRawPostById(postId)
+    .then((post) => {
+      if (!post) throw new Error('该文章不存在');
+      if (post.author._id.toString() !== authorId.toString()) {
+        throw new Error('权限不足');
+      }
+      res.render('edit', { post });
+    })
+    .catch(next);
 });
 
 // POST /posts/:postId/edit 更新一篇文章
 router.post('/:postId/edit', (req, res, next) => {
-  res.send('更新文章');
+  const { title, content } = req.fields;
+  const { postId } = req.params;
+  const author = req.session.user._id;
+
+  try {
+    if (!title.length) {
+      throw new Error('请填写文章标题');
+    }
+    if (!content.length) {
+      throw new Error('请填写文章内容');
+    }
+  } catch (err) {
+    req.flash('error'.err.message);
+    res.redirect('back');
+  }
+
+  PostModel.getRawPostById(postId)
+    .then((post) => {
+      if (!post) throw new Error('该文章不存在');
+      if (post.author._id.toString() !== author.toString()) {
+        throw new Error('权限不足');
+      }
+      PostModel.updatePostById(postId, { title, content })
+        .then(() => {
+          req.flash('success', '文章更新成功');
+          res.redirect(`/posts/${postId}`);
+        })
+        .catch(next);
+    });
 });
 
 // GET /posts/:postId/remove 删除一篇文章
 router.get('/:postId/remove', checkLogin, (req, res, next) => {
-  res.send('删除文章');
+  const { postId } = req.params;
+  const author = req.session.user._id;
+  PostModel.getRawPostById(postId)
+    .then((post) => {
+      if (!post) throw new Error('该文章不存在');
+      if (post.author._id.toString() !== author.toString()) {
+        throw new Error('权限不足');
+      }
+      PostModel.delPostById(postId)
+        .then(() => {
+          req.flash('success', '删除成功');
+          res.redirect('/posts');
+        })
+        .catch(next);
+    });
 });
 
 module.exports = router;
