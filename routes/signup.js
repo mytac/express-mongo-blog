@@ -29,8 +29,8 @@ router.post('/', checkNotLogin, (req, res, next) => {
     if (password.length < 6) {
       throw new Error('密码长度不能小于6个');
     }
-    if (['m', 'f', 'x'].indexOf(gender)) {
-      throw new Error('性别只能是m、f、x中的一个');
+    if (['m', 'f', 'x'].indexOf(gender) === -1) {
+      throw new Error('性别只能是mfx中的一个');
     }
     if (repassword !== password) {
       throw new Error('两次输入密码不一致');
