@@ -8,7 +8,12 @@ const PostModel = require('../models/posts');
 // GET /posts 所有用户或特定用户的文章页
 // eg: GET /posts?author=xxx
 router.get('/', (req, res, next) => {
-  res.render('posts');
+  const { author } = req.query;
+  PostModel.getPosts(author)
+    .then((posts) => {
+      res.render('posts', { posts });
+    })
+    .catch(next);
 });
 
 // POST /posts/create 发表一篇文章
@@ -35,7 +40,7 @@ router.post('/create', checkLogin, (req, res, next) => {
     .then((result) => {
       const postId = result.ops[0]._id;
       req.flash('success', '发布成功');
-      res.redirect(`/posts/:${postId}`);
+      res.redirect(`/posts/${postId}`);
     })
     .catch(next);
 });
@@ -47,7 +52,21 @@ router.get('/create', checkLogin, (req, res, next) => {
 
 // GET /posts/:postId 单独一篇文章
 router.get('/:postId', (req, res, next) => {
-  res.send('文章详情页');
+  const { postId } = req.params;
+  Promise
+    .all([
+      PostModel.getPostById(postId),
+      PostModel.incPv(postId),
+    ])
+    .then((result) => {
+      const post = result[0];
+      if (!post) {
+        throw new Error('该文章不存在');
+      }
+
+      res.render('post', { post });
+    })
+    .catch(next);
 });
 
 // GET /posts/:postId/edit 文章编辑页
