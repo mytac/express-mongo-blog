@@ -57,7 +57,7 @@ router.get('/:postId', (req, res, next) => {
   Promise
     .all([
       PostModel.getPostById(postId),
-      CommentModel.getCommentById(postId),
+      CommentModel.getComments(postId),
       PostModel.incPv(postId),
     ])
     .then((result) => {
