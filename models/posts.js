@@ -1,5 +1,7 @@
-const { Post } = require('../lib/mongo');
 const marked = require('marked');
+
+const { Post } = require('../lib/mongo');
+const CommentModel = require('./comment');
 
 // 注册contentToHtml
 Post.plugin('contentToHtml', {
@@ -17,6 +19,25 @@ Post.plugin('contentToHtml', {
   },
 });
 
+// 给post添加留言数
+Post.plugin('addCommentsCount', {
+  afterFind(posts) {
+    return Promise.all(posts.map(post => CommentModel.getCommentsCount(post._id).then((count) => {
+      post.commentsCount = count;
+      return post;
+    })));
+  },
+  afterFindOne(post) {
+    if (post) {
+      return CommentModel.getCommentsCount(post._id).then((count) => {
+        post.commentsCount = count;
+        return post;
+      });
+    }
+    return post;
+  },
+});
+
 module.exports = {
   // 创建一篇文章
   create(post) {
@@ -28,6 +49,7 @@ module.exports = {
       .findOne({ _id: postId })
       .populate({ path: 'author', model: 'User' })
       .addCreatedAt()
+      .addCommentsCount()
       .contentToHtml()
       .exec();
   },
@@ -64,6 +86,13 @@ module.exports = {
   },
   // 通过id删除文章
   delPostById(postId) {
-    return Post.remove({ _id: postId }).exec();
+    return Post.remove({ _id: postId })
+      .exec()
+      .then((res) => {
+        // 文章删除后，在删除文章下的所有留言
+        if (res.result.ok && res.result.n > 0) {
+          return CommentModel.delCommentBypostId(postId);
+        }
+      });
   },
 };
